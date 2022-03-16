@@ -26,6 +26,8 @@ pymysql.install_as_MySQLdb()
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = SECRET_KEY
 
+ALGORITHM = ALGORITHM
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -134,9 +136,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ko-KR'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
 
