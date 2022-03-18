@@ -1,10 +1,20 @@
+import boto3
+
+from uuid             import uuid4
 from django.views     import View
 from django.http      import JsonResponse
+from django.db        import transaction
 from django.db.models import Avg
 
-from lectures.models  import Lecture
-from users.models     import UserLecture, Like
-from core.decorator   import public_decorator, signin_decorator
+from lectures.models import Lecture, LectureImage
+from users.models    import UserLecture, Like
+from core.decorator  import public_decorator, signin_decorator
+from core.storage    import FileUpload, s3_client
+from my_settings     import (
+    BUCKET_DIR_THUMNAIL,
+    BUCKET_DIR_IMAGE,
+    BUCKET_DIR_PROFILE 
+)
 
 class LectureDetailView(View):
     @public_decorator
@@ -77,3 +87,66 @@ class LectureLikeView(View):
         
         except Lecture.DoesNotExist:
             return JsonResponse({'message' : 'LECTURE_NOT_EXIST'}, status=400)
+
+class LecturesView(View):    
+    @signin_decorator
+    def post(self, request):
+        try:
+            profile        = request.FILES['profile']
+            thumnail       = request.FILES['thumnail']
+            lecture_images = request.FILES.getlist('lecture_images')
+            
+            user             = request.user
+            user.nickname    = request.POST['nickname']
+            user.description = request.POST['introduce']
+            
+            name          = request.POST['name']
+            price         = request.POST['price']
+            discount_rate = request.POST['discount_rate']
+            
+            description    = request.POST['description']
+            difficulty_id  = request.POST['difficulty_id']
+            subcategory_id = request.POST['subcategory_id']
+            title          = request.POST['title']
+
+            file_handler = FileUpload(s3_client)
+            
+            with transaction.atomic():
+                uploaded_profile_image_url = file_handler.upload(profile, BUCKET_DIR_PROFILE)
+
+                user.profile_image_url = uploaded_profile_image_url
+                user.save()
+              
+                uploaded_thumbnail_url = file_handler.upload(thumnail, BUCKET_DIR_THUMNAIL)
+                
+                lecture = Lecture.objects.create(
+                        name                = name,
+                        price               = price,
+                        discount_rate       = discount_rate,
+                        thumbnail_image_url = uploaded_thumbnail_url,
+                        description         = description,
+                        user_id             = user.id,
+                        difficulty_id       = difficulty_id,
+                        subcategory_id      = subcategory_id
+                )
+                
+                bulk_lecture_images = []
+
+                for idx, lecture_image in enumerate(lecture_images):
+                
+                    uploaded_lecture_image_url = file_handler.upload(lecture_image,BUCKET_DIR_IMAGE)
+                
+                    bulk_lecture_images.append(LectureImage(
+                        title      = title,
+                        image_url  = uploaded_lecture_image_url,
+                        sequence   = idx + 1,
+                        lecture_id = lecture.id
+                    ))
+                LectureImage.objects.bulk_create(bulk_lecture_images)       
+                 
+            return JsonResponse({"message" : "success"},status=201)        
+        
+        except KeyError:
+            return JsonResponse({"message" : "KEY_ERROR"},status=400)
+        except transaction.TransactionManagementError:
+            return JsonResponse({'message':'TransactionManagementError'}, status=400)
