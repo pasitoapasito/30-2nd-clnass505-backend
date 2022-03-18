@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'lectures',
     'reviews',
     'core',
+    'storages'
 ]
 
 MIDDLEWARE = [
