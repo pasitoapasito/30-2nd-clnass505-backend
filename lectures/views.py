@@ -20,9 +20,8 @@ class FileView(View):
         try:
             profile  = request.FILES['profile']
             user     = request.user
-           
             users    = User.objects.filter(id=user.id)
-            user_ids = User.objects.get(id=user.id)
+           
             BUCKET_ADDRESS    = 'https://woosbucket.s3.ap-northeast-2.amazonaws.com'
             BUCKET_DIRECTORY  = 'thumnail'
             BUCKET_DIRECTORY2 = 'image'
