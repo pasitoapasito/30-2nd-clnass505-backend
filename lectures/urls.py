@@ -1,6 +1,6 @@
 from django.urls import path
-from lectures.views import FileView 
+from lectures.views import LecturesView 
  
 urlpatterns = [
-    path('/upload',FileView.as_view()),
+    path('/upload',LecturesView.as_view()),
 ]
