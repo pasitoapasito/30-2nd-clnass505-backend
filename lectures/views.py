@@ -19,12 +19,25 @@ class LecturesView(View):
     )
     
     @signin_decorator
-    @transaction.atomic
     def post(self, request):
         try:
-           
+            thumnail      = request.FILES['thumnail']
+            lecture_image = request.FILES.getlist('image')
+            
+            name                = request.POST['name']
+            price               = request.POST['price']
+            discount_rate       = request.POST['discount_rate']
+            thumbnail_image_url = f"{BUCKET_ADDRESS}/{thumnail_url}"
+            description         = request.POST['description']
+            user_id             = user.id
+            difficulty_id       = request.POST['difficulty_id']
+            subcategory_id      = request.POST['subcategory_id']
+            
+            title      = request.POST['title']
+            image_url  = f"{BUCKET_ADDRESS}/{image_url}"
+            lecture_id = lecture.id
+
             with transaction.atomic():
-                sid = transaction.savepoint()
                 profile  = request.FILES['profile']
                 user     = request.user
                  
@@ -45,48 +58,44 @@ class LecturesView(View):
                 user.description       = request.POST['introduce']
                 
                 user.save()
-                transaction.savepoint_commit(sid)
-                
-                file    = request.FILES['thumnail']
-                files   = request.FILES.getlist('image')
-        
+              
                 self.s3_client.upload_fileobj(
-                    file, 
+                    thumnail, 
                     "woosbucket",
                     thumnail_url,
                     ExtraArgs={
-                        "ContentType": file.content_type
+                        "ContentType": thumnail.content_type
                     }
                 )
                 
                 lecture = Lecture.objects.create(
-                        name                = request.POST['name'],
-                        price               = request.POST['price'],
-                        discount_rate       = request.POST['discount_rate'],
-                        thumbnail_image_url = f"{BUCKET_ADDRESS}/{thumnail_url}",
-                        description         = request.POST['description'],
-                        user_id             = user.id,
-                        difficulty_id       = request.POST['difficulty_id'],
-                        subcategory_id      = request.POST['subcategory_id']
+                        name                = name,
+                        price               = price,
+                        discount_rate       = discount_rate,
+                        thumbnail_image_url = thumbnail_image_url ,
+                        description         = description,
+                        user_id             = user_id,
+                        difficulty_id       = difficulty_id,
+                        subcategory_id      = subcategory_id
                 )
                 
-                for i in range(len(files)):
+                for i in lecture_image:
                     image_url  = f"{BUCKET_DIR_IMAGE}/{str(uuid4())}"
                     
                     self.s3_client.upload_fileobj(
-                        files[i], 
+                        lecture_image[i], 
                         "woosbucket",
                         image_url,
                         ExtraArgs={
-                            "ContentType": file.content_type
+                            "ContentType": thumnail.content_type
                         }
                     )
                 
                     LectureImage.objects.create(
-                            title      = request.POST['title'],
-                            image_url  = f"{BUCKET_ADDRESS}/{image_url}",
+                            title      = title,
+                            image_url  = image_url,
                             sequence   = i,
-                            lecture_id = lecture.id
+                            lecture_id = lecture_id
                     )       
                  
 
@@ -94,5 +103,4 @@ class LecturesView(View):
         
         except KeyError:
             return JsonResponse({"message" : "KEY_ERROR"},status=400)
-        except Exception:
-            transaction.savepoint_rollback(sid) 
+       
