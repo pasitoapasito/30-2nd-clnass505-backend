@@ -21,10 +21,10 @@ class LecturesView(View):
     @signin_decorator
     def post(self, request):
         try:
-            thumnail      = request.FILES['thumnail']
-            lecture_image = request.FILES.getlist('lecture_image')
-            profile       = request.FILES['profile']
-            user          = request.user
+            thumnail       = request.FILES['thumnail']
+            lecture_images = request.FILES.getlist('lecture_images')
+            profile        = request.FILES['profile']
+            user           = request.user
             
             name          = request.POST['name']
             price         = request.POST['price']
@@ -34,7 +34,7 @@ class LecturesView(View):
             difficulty_id  = request.POST['difficulty_id']
             subcategory_id = request.POST['subcategory_id']
             title          = request.POST['title']
-            print(lecture_image)
+           
 
             with transaction.atomic():
                 thumnail_url        = f"{BUCKET_DIR_THUMNAIL}/{str(uuid4())}"
@@ -74,12 +74,12 @@ class LecturesView(View):
                         difficulty_id       = difficulty_id,
                         subcategory_id      = subcategory_id
                 )
-               
-                for i in range(len(lecture_image)):
+                
+                for idx, lecture_image in enumerate(lecture_images):
                     image_url  = f"{BUCKET_DIR_IMAGE}/{str(uuid4())}"
                     
                     self.s3_client.upload_fileobj(
-                        lecture_image[i], 
+                        lecture_image, 
                         "woosbucket",
                         image_url,
                         ExtraArgs={
@@ -90,7 +90,7 @@ class LecturesView(View):
                     LectureImage.objects.create(
                             title      = title,
                             image_url  = f"{BUCKET_ADDRESS}/{image_url}",
-                            sequence   = i,
+                            sequence   = idx + 1,
                             lecture_id = lecture.id
                     )       
                  
@@ -98,4 +98,3 @@ class LecturesView(View):
         
         except KeyError:
             return JsonResponse({"message" : "KEY_ERROR"},status=400)
-       
