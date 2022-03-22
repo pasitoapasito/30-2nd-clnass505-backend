@@ -129,7 +129,7 @@ class LectureDetailTest(TestCase):
         )
         
     def test_lecture_detail_no_token_success(self):
-        client = Client()
+        client   = Client()
         response = client.get('/lectures/1')
         
         self.assertEqual(response.status_code, 200)
@@ -288,8 +288,127 @@ class LectureDetailTest(TestCase):
         )
     
     def test_lecture_detail_fail_lecture_not_exist(self):
-        client = Client()
+        client   = Client()
         response = client.get('/lectures/100')
         
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {'message' : 'LECTURE_NOT_EXIST'})
+        
+class LectureLikeTest(TestCase):
+    def setUp(self):
+        User.objects.create(
+            id                = 1,
+            name              = 'DGK1',
+            nickname          = 'TESTDGK1',
+            kakao_id          = 123456789,
+            email             = 'test1@gmail.com',
+            description       = '테스트코드를 위한 유저입니다.',
+            profile_image_url = 'http://test@image1.jpg',
+            point             = 1000000
+        )
+
+        User.objects.create(
+            id                = 2,
+            name              = 'DGK2',
+            nickname          = 'TESTDGK2',
+            kakao_id          = 12345678910,
+            email             = 'test2@gmail.com',
+            description       = '테스트코드를 위한 유저입니다.',
+            profile_image_url = 'http://test@image2.jpg',
+            point             = 1000000
+        )
+        
+        Category.objects.create(
+            id   = 1,
+            name = '테스트 카테고리'
+        )
+        
+        Difficulty.objects.create(
+            id   = 1,
+            name = '테스트'
+        )
+        
+        Subcategory.objects.create(
+            id          = 1,
+            name        = '테스트 서브카테고리',
+            category_id = 1
+        )
+        
+        Lecture.objects.create(
+            id                  = 1,
+            name                = '테스트용 강의',
+            price               = 1000000,
+            discount_rate       = 30,
+            thumbnail_image_url = 'http://test@thumb_image.jpg',
+            description         = '테스트 강의 제공자',
+            user_id             = 1,
+            difficulty_id       = 1,
+            subcategory_id      = 1
+        )
+        
+        LectureImage.objects.create(
+            id         = 1,
+            title      = '상세 이미지',
+            image_url  = 'http://test@detail_image.jpg',
+            sequence   = 1,
+            lecture_id = 1
+        )
+        
+        UserLecture.objects.create(
+            id         = 1,
+            user_id    = 2,
+            lecture_id = 1
+        )
+        
+        Like.objects.create(
+            id         = 1,
+            user_id    = 2,
+            lecture_id = 1
+        )
+        
+        Review.objects.create(
+            id         = 1,
+            title      = '테스트용 리뷰',
+            content    = '테스트 리뷰입니다.',
+            rating     = 5,
+            user_id    = 1,
+            lecture_id = 1
+        )
+        
+        ReviewImage.objects.create(
+            id        = 1,
+            image_url = 'http://test@review_image.jpg',
+            review_id = 1
+        )
+        
+    def tearDown(self):
+        User.objects.all().delete()
+        Category.objects.all().delete()
+        Difficulty.objects.all().delete()
+        Subcategory.objects.all().delete()
+        Lecture.objects.all().delete()
+        LectureImage.objects.all().delete()
+        UserLecture.objects.all().delete()
+        Like.objects.all().delete()
+        Review.objects.all().delete()
+        ReviewImage.objects.all().delete()
+        
+    def test_lecture_like_create_success(self):
+        client = Client()
+        
+        access_token = jwt.encode({'user_id' : 1, 'exp': datetime.utcnow() + timedelta(hours=24)}, settings.SECRET_KEY, settings.ALGORITHM)
+        headers      = {'HTTP_Authorization' : access_token}
+        response     = client.post('/lectures/1/like', **headers)
+        
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json(), {'message' : 'SUCCESS_LIKE'})
+        
+    def test_lecture_like_cancel_success(self):
+        client = Client()
+        
+        access_token = jwt.encode({'user_id' : 2, 'exp': datetime.utcnow() + timedelta(hours=24)}, settings.SECRET_KEY, settings.ALGORITHM)
+        headers      = {'HTTP_Authorization' : access_token}
+        response     = client.post('/lectures/1/like', **headers)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'message' : 'CANCEL_LIKE'})
