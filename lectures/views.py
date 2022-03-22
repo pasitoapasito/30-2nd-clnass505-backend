@@ -24,7 +24,10 @@ class LecturesView(View):
             thumnail       = request.FILES['thumnail']
             lecture_images = request.FILES.getlist('lecture_images')
             profile        = request.FILES['profile']
+            
             user           = request.user
+            user.nickname          = request.POST['nickname']
+            user.description       = request.POST['introduce']
             
             name          = request.POST['name']
             price         = request.POST['price']
@@ -34,7 +37,8 @@ class LecturesView(View):
             difficulty_id  = request.POST['difficulty_id']
             subcategory_id = request.POST['subcategory_id']
             title          = request.POST['title']
-           
+
+            
 
             with transaction.atomic():
                 thumnail_url        = f"{BUCKET_DIR_THUMNAIL}/{str(uuid4())}"
@@ -50,9 +54,6 @@ class LecturesView(View):
                 )
             
                 user.profile_image_url = f"{BUCKET_ADDRESS}/{profile_image_url}"
-                user.nickname          = request.POST['nickname']
-                user.description       = request.POST['introduce']
-                
                 user.save()
               
                 self.s3_client.upload_fileobj(
@@ -98,3 +99,5 @@ class LecturesView(View):
         
         except KeyError:
             return JsonResponse({"message" : "KEY_ERROR"},status=400)
+        except transaction.TransactionManagementError:
+            return JsonResponse({'message':'TransactionManagementError'}, status=400)
