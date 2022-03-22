@@ -19,6 +19,9 @@ def signin_decorator(func):
 
         except User.DoesNotExist:
             return JsonResponse({'message' : 'INVALID_USER'}, status=401)
+        
+        except jwt.exceptions.ExpiredSignatureError:
+            return JsonResponse({'message' : 'EXPIRED_TOKEN'}, status=400)
 
         return func(self, request, *args, **kwargs)
 
@@ -37,6 +40,9 @@ def public_decorator(func):
         
         except jwt.exceptions.DecodeError:
             return JsonResponse({'message' : 'INVALID_TOKEN'}, status=401)
+        
+        except jwt.exceptions.ExpiredSignatureError:
+            return JsonResponse({'message' : 'EXPIRED_TOKEN'}, status=400)
 
         except User.DoesNotExist:
             return JsonResponse({'message' : 'INVALID_USER'}, status=401)

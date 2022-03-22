@@ -3,8 +3,8 @@ from django.http      import JsonResponse
 from django.db.models import Avg
 
 from lectures.models  import Lecture
-from users.models     import UserLecture
-from core.decorator   import public_decorator
+from users.models     import UserLecture, Like
+from core.decorator   import public_decorator, signin_decorator
 
 class LectureDetailView(View):
     @public_decorator
@@ -57,6 +57,23 @@ class LectureDetailView(View):
             }
             
             return JsonResponse({'message' : 'SUCCESS', 'result' : result}, status=200)
+        
+        except Lecture.DoesNotExist:
+            return JsonResponse({'message' : 'LECTURE_NOT_EXIST'}, status=400)
+        
+class LectureLikeView(View):
+    @signin_decorator
+    def post(self, request, lecture_id):
+        try:
+            lecture          = Lecture.objects.get(id=lecture_id)
+            user             = request.user
+            like, is_created = Like.objects.get_or_create(user=user, lecture=lecture)
+            
+            if not is_created:
+                like.delete()
+                return JsonResponse({'message' : 'CANCEL_LIKE'}, status=200)
+            
+            return JsonResponse({'message' : 'SUCCESS_LIKE'}, status=201)
         
         except Lecture.DoesNotExist:
             return JsonResponse({'message' : 'LECTURE_NOT_EXIST'}, status=400)
