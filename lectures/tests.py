@@ -8,6 +8,140 @@ from users.models    import User, UserLecture, Like
 from lectures.models import Lecture, Difficulty, Category, Subcategory, LectureImage
 from reviews.models  import Review, ReviewImage
 
+class LectureListTest(TestCase):
+
+    maxDiff = None
+
+    @classmethod
+    def setUpTestData(cls):
+        User.objects.create(
+            id = 1,
+            name = 'user1',
+            nickname = 'test.user1',
+            kakao_id = 1,
+            email = 'user1@gmail.com',
+            description = 'testcode1',
+            profile_image_url = 'http://test1.img.jpg',
+            point = 1000000
+        )
+
+        User.objects.create(
+            id = 2,
+            name = 'user2',
+            nickname = 'test.user2',
+            kakao_id = 2,
+            email = 'user2@gmail.com',
+            description = 'testcode2',
+            profile_image_url = 'http://test2.img.jpg',
+            point = 1000000
+        )
+
+        Category.objects.create(
+            id = 1,
+            name = 'test.category1'
+        )
+
+        Subcategory.objects.create(
+            id = 1,
+            name = 'test.subcategory1',
+            category_id = 1
+        )
+
+        Subcategory.objects.create(
+            id = 2,
+            name = 'test.subcategory2',
+            category_id = 1
+        )
+
+        Difficulty.objects.create(
+            id = 1,
+            name = 'difficulty1'
+        )
+
+        Difficulty.objects.create(
+            id = 2,
+            name = 'difficulty2'
+        )
+
+        Lecture.objects.create(
+            id = 1,
+            name = 'test.lecture1',
+            price = 30000,
+            discount_rate = 20,
+            thumbnail_image_url = 'test.thumbnail1.img.jpg',
+            description = 'test.lecture1!',
+            user_id = 1,
+            difficulty_id = 1,
+            subcategory_id = 1
+        )
+
+        Lecture.objects.create(
+            id = 2,
+            name = 'test.lecture2',
+            price = 20000,
+            discount_rate = 20,
+            thumbnail_image_url = 'test.thumbnail2.img.jpg',
+            description = 'test.lecture2!',
+            user_id = 2,
+            difficulty_id = 2,
+            subcategory_id = 2
+        )
+
+        Review.objects.create(
+            id = 1,
+            title = 'test1',
+            content = 'test.review1',
+            rating = 4,
+            user_id = 1,
+            lecture_id = 1
+        )
+
+        Review.objects.create(
+            id = 2,
+            title = 'test2',
+            content = 'test.review2',
+            rating = 3,
+            user_id = 2,
+            lecture_id = 2
+        )
+
+        Like.objects.create(
+            id = 1,
+            lecture_id = 2,
+            user_id = 2
+        )
+
+    def test_success_lectures(self):
+        client = Client()
+        response = client.get('/lectures')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(),
+            {
+                'message' : 'SUCCESS',
+                'results' : 2,
+                'data'  : [{
+                    'id'               : 2,
+                    'title'            : 'test.lecture2',
+                    'price'            : 20000,
+                    'discount_rate'    : 20,
+                    'thumbnail_image'  : 'test.thumbnail2.img.jpg',
+                    'creator_nickname' : 'user2',
+                    'liked_count'      : 1,
+                    'user_liked'       : False
+                },{
+                    'id'               : 1,
+                    'title'            : 'test.lecture1',
+                    'price'            : 30000,
+                    'discount_rate'    : 20,
+                    'thumbnail_image'  : 'test.thumbnail1.img.jpg',
+                    'creator_nickname' : 'user1',
+                    'liked_count'      : 0,
+                    'user_liked'       : False
+                }]
+            }
+        )
+
 class LectureDetailTest(TestCase):
     
     maxDiff = None
