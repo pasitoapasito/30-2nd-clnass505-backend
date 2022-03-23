@@ -1,20 +1,18 @@
-import boto3
-
-from uuid             import uuid4
 from django.views     import View
 from django.http      import JsonResponse
 from django.db        import transaction
 from django.db.models import Avg
 
-from lectures.models import Lecture, LectureImage
-from users.models    import UserLecture, Like
-from core.decorator  import public_decorator, signin_decorator
-from core.storage    import FileUpload, s3_client
-from my_settings     import (
+from core.decorator   import public_decorator, signin_decorator
+from core.storage     import FileUpload, s3_client
+from my_settings      import (
     BUCKET_DIR_THUMBNAIL,
     BUCKET_DIR_IMAGE,
     BUCKET_DIR_PROFILE 
 )
+
+from lectures.models  import Lecture, LectureImage
+from users.models     import UserLecture, Like
 
 class LectureDetailView(View):
     @public_decorator
@@ -71,6 +69,61 @@ class LectureDetailView(View):
         except Lecture.DoesNotExist:
             return JsonResponse({'message' : 'LECTURE_NOT_EXIST'}, status=400)
         
+class LectureCreatorView(View):
+    @signin_decorator
+    def get(self, request):
+        user     = request.user
+        lectures = Lecture.objects\
+                          .filter(user=user)\
+                          .select_related('user', 'subcategory')\
+                          .prefetch_related('like_set')
+        
+        results = [
+            {
+                'id'                        : lecture.id,
+                'user_name'                 : user.name,
+                'user_email'                : user.email,
+                'subcategory'               : lecture.subcategory.name,
+                'creator_nickname'          : lecture.user.nickname,
+                'creator_profile_image_url' : lecture.user.profile_image_url,
+                'title'                     : lecture.name,
+                'price'                     : lecture.price,
+                'discount_rate'             : lecture.discount_rate if lecture.discount_rate else None,
+                'discount_price'            : float(lecture.price) * (1-(lecture.discount_rate/100))\
+                                              if lecture.discount_rate else None,
+                'likes'                     : lecture.like_set.count(),
+                'thumbnail_image_url'       : lecture.thumbnail_image_url,
+            }
+        for lecture in lectures]
+        
+        return JsonResponse({'message' : 'SUCCESS', 'results' : results}, status=200)
+        
+class LectureStudentView(View):
+    @signin_decorator
+    def get(self, request):
+        user     = request.user
+        
+        results = [
+            {
+                'id'                        : lecture.id,
+                'user_name'                 : user.name,
+                'user_email'                : user.email,
+                'subcategory'               : lecture.subcategory.name,
+                'creator_nickname'          : lecture.user.nickname,
+                'creator_profile_image_url' : lecture.user.profile_image_url,
+                'title'                     : lecture.name,
+                'price'                     : lecture.price,
+                'discount_rate'             : lecture.discount_rate if lecture.discount_rate else None,
+                'discount_price'            : float(lecture.price) * (1-(lecture.discount_rate/100))\
+                                              if lecture.discount_rate else None,
+                'likes'                     : lecture.like_set.count(),
+                'is_liked'                  : lecture.like_set.filter(user=user).exists(),
+                'thumbnail_image_url'       : lecture.thumbnail_image_url,
+            }
+        for lecture in user.lectures.all().select_related('subcategory', 'user').prefetch_related('like_set')]
+        
+        return JsonResponse({'message' : 'SUCCESS', 'results' : results}, status=200)
+        
 class LectureLikeView(View):
     @signin_decorator
     def post(self, request, lecture_id):
@@ -88,26 +141,53 @@ class LectureLikeView(View):
         except Lecture.DoesNotExist:
             return JsonResponse({'message' : 'LECTURE_NOT_EXIST'}, status=400)
 
+    @signin_decorator
+    def get(self, request):
+        user     = request.user
+        likes    = Like.objects\
+                       .filter(user=user)\
+                       .select_related('user', 'lecture')
+        
+        results = [
+            {
+                'id'                        : like.lecture.id,
+                'user_name'                 : user.name,
+                'user_email'                : user.email,
+                'subcategory'               : like.lecture.subcategory.name,
+                'creator_nickname'          : like.lecture.user.nickname,
+                'creator_profile_image_url' : like.lecture.user.profile_image_url,
+                'title'                     : like.lecture.name,
+                'price'                     : like.lecture.price,
+                'discount_rate'             : like.lecture.discount_rate if like.lecture.discount_rate else None,
+                'discount_price'            : float(like.lecture.price) * (1-(like.lecture.discount_rate/100))\
+                                              if like.lecture.discount_rate else None,
+                'likes'                     : like.lecture.like_set.count(),
+                'thumbnail_image_url'       : like.lecture.thumbnail_image_url,
+            }
+        for like in likes]
+    
+        return JsonResponse({'message' : 'SUCCESS', 'results' : results}, status=200)
+
 class LecturesView(View):    
     @signin_decorator
     def post(self, request):
         try:
-            profile        = request.FILES['profile']
-            thumbnail       = request.FILES['thumbnail']
-            lecture_images = request.FILES.getlist('lecture_images')
+            profile          = request.FILES['profile']
+            thumbnail        = request.FILES['thumbnail']
+            lecture_images   = request.FILES.getlist('lecture_images')
             
             user             = request.user
             user.nickname    = request.POST['nickname']
             user.description = request.POST['introduce']
             
-            name          = request.POST['name']
-            price         = request.POST['price']
-            discount_rate = request.POST['discount_rate']
+            name             = request.POST['name']
+            price            = request.POST['price']
+            discount_rate    = request.POST['discount_rate']
             
-            description    = request.POST['description']
-            difficulty_id  = request.POST['difficulty_id']
-            subcategory_id = request.POST['subcategory_id']
-            title          = request.POST['title']
+            description      = request.POST['description']
+            difficulty_id    = request.POST['difficulty_id']
+            subcategory_id   = request.POST['subcategory_id']
+            title            = request.POST['title']
 
             file_handler = FileUpload(s3_client)
             

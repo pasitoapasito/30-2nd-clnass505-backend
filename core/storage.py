@@ -1,7 +1,5 @@
-from django.http import JsonResponse
-import boto3
-import uuid
-from uuid import uuid4
+import boto3, uuid
+
 from my_settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME 
 
 class S3Client:
