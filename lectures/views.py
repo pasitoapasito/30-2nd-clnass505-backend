@@ -11,7 +11,7 @@ from users.models    import UserLecture, Like
 from core.decorator  import public_decorator, signin_decorator
 from core.storage    import FileUpload, s3_client
 from my_settings     import (
-    BUCKET_DIR_THUMNAIL,
+    BUCKET_DIR_THUMBNAIL,
     BUCKET_DIR_IMAGE,
     BUCKET_DIR_PROFILE 
 )
@@ -93,7 +93,7 @@ class LecturesView(View):
     def post(self, request):
         try:
             profile        = request.FILES['profile']
-            thumnail       = request.FILES['thumnail']
+            thumbnail       = request.FILES['thumbnail']
             lecture_images = request.FILES.getlist('lecture_images')
             
             user             = request.user
@@ -117,7 +117,7 @@ class LecturesView(View):
                 user.profile_image_url = uploaded_profile_image_url
                 user.save()
               
-                uploaded_thumbnail_url = file_handler.upload(thumnail, BUCKET_DIR_THUMNAIL)
+                uploaded_thumbnail_url = file_handler.upload(thumbnail, BUCKET_DIR_THUMBNAIL)
                 
                 lecture = Lecture.objects.create(
                         name                = name,
