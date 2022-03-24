@@ -38,6 +38,8 @@ class LectureDetailView(View):
             
             result = {
                 'id'                        : lecture.id,
+                'user_name'                 : user.name if user else None,
+                'user_email'                : user.email if user else None,
                 'subcategory'               : lecture.subcategory.name,
                 'creator_nickname'          : lecture.user.nickname,
                 'creator_profile_image_url' : lecture.user.profile_image_url,
@@ -51,6 +53,7 @@ class LectureDetailView(View):
                 'review_avg_rating'         : round(lecture.review_set.all().aggregate(Avg('rating'))['rating__avg'], 1)\
                                               if lecture.review_set.all() else None,
                 'likes'                     : lecture.like_set.count(),
+                'is_liked'                  : lecture.like_set.filter(user=user).exists(),
                 'thumbnail_image_url'       : lecture.thumbnail_image_url,
                 'detail_image_url'          : {image.sequence : image.image_url for image in lecture.lectureimage_set.all()},
                 'user_status'               : user_status, 
@@ -228,5 +231,6 @@ class LecturesView(View):
         
         except KeyError:
             return JsonResponse({"message" : "KEY_ERROR"},status=400)
+        
         except transaction.TransactionManagementError:
             return JsonResponse({'message':'TransactionManagementError'}, status=400)
