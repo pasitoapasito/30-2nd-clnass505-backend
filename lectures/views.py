@@ -224,7 +224,7 @@ class LectureCreatorView(View):
 class LectureStudentView(View):
     @signin_decorator
     def get(self, request):
-        user     = request.user
+        user    = request.user
         
         results = [
             {
@@ -266,10 +266,10 @@ class LectureLikeView(View):
 
     @signin_decorator
     def get(self, request):
-        user     = request.user
-        likes    = Like.objects\
-                       .filter(user=user)\
-                       .select_related('user', 'lecture')
+        user    = request.user
+        likes   = Like.objects\
+                      .filter(user=user)\
+                      .select_related('user', 'lecture')
         
         results = [
             {
