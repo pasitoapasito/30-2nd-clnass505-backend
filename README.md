@@ -56,7 +56,7 @@
 ## 구현 기능
 
 * 공통 : 모델링 작업(ERD생성), 초기 세팅 작업
-* 김동규 : CSV 파일 및 db_uploader.py 작성, LectureDetail, LectureCreator, LectureStudent, LectureLike, Social Login(KaKao) API 구현 및 <br> 유닛테스트 코드 작성
+* 김동규 : CSV 파일 및 db_uploader.py 작성, LectureDetail, LectureCreator, LectureStudent, LectureLike, Social Login(KaKao) API 구현 및 유닛테스트 코드 작성
 * 박건우 : LectureCreate API With AWS S3 구현
 * 이지원 : CSV 파일 및 db_uploader.py 작성, LectureList API 구현 및 유닛테스트 코드 작성
 
